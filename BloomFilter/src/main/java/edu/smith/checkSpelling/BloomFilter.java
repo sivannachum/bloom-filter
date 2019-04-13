@@ -28,7 +28,10 @@ public class BloomFilter extends AbstractSet<String>{
 			bits.set(index, true);
 		}
 	}
-	public boolean contains(String value) {
+	
+	@Override
+	public boolean contains(Object obj) {
+		String value = (String) obj;
 		for (int i = 0; i < numHash; i++) {
 			int index = hashes.getIndex(i).hash(value) % size;
 			if (!bits.get(index)) {

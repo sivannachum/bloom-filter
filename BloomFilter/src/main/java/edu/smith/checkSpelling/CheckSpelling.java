@@ -74,7 +74,7 @@ public class CheckSpelling {
 		double fractionFound = found / (double) words.size();
 		double timeSpentPerItem = (endLookup - startLookup) / ((double) words.size());
 		int nsPerItem = (int) timeSpentPerItem;
-		System.out.println(dictionary.getClass().getSimpleName()+": Lookup of items found="+fractionFound+" time="+nsPerItem+" ns/item");
+		System.out.println("Lookup of items found="+fractionFound+" time="+nsPerItem+" ns/item");
 	}
 	
 	/**
@@ -205,15 +205,23 @@ public class CheckSpelling {
 		time = (end - start) / 1e9;
 		System.out.println("Loaded BloomFilter in " + time +" seconds.");
 		
+		System.out.println("");
 		System.out.println("Looking up all the words in the dictionary: ");
 		// --- Make sure that every word in the dictionary is in the dictionary:
+		System.out.print("TreeSet: ");
 		timeLookup(listOfWords, treeOfWords);
+		System.out.print("HashSet: ");
 		timeLookup(listOfWords, hashOfWords);
+		System.out.print("SortedStringListSet: ");
 		timeLookup(listOfWords, bsl);
+		System.out.print("CharTrie: ");
 		timeLookup(listOfWords, trie);
+		System.out.print("LLHash: ");
 		timeLookup(listOfWords, hm100k);
+		System.out.print("BloomFilter: ");
 		timeLookup(listOfWords, bloom);
 		
+		System.out.println("");
 		System.out.println("Bloom filter assistance, looking up all the words in the dictionary: ");
 		timeLookupBloom(listOfWords, treeOfWords, bloom);
 		timeLookupBloom(listOfWords, hashOfWords, bloom);
@@ -221,20 +229,28 @@ public class CheckSpelling {
 		timeLookupBloom(listOfWords, trie, bloom);
 		timeLookupBloom(listOfWords, hm100k, bloom);
 		
+		System.out.println("");
 		System.out.println("Mixed data set checking: ");
 		for (int i=0; i<10; i++) {
 			// --- Create a dataset of mixed hits and misses with p=i/10.0
 			List<String> hitsAndMisses = createMixedDataset(listOfWords, 10_000, i/10.0);
 			
 			// --- Time the data structures.
+			System.out.print("TreeSet: ");
 			timeLookup(hitsAndMisses, treeOfWords);
+			System.out.print("HashSet: ");
 			timeLookup(hitsAndMisses, hashOfWords);
+			System.out.print("SortedStringListSet: ");
 			timeLookup(hitsAndMisses, bsl);
+			System.out.print("CharTrie: ");
 			timeLookup(hitsAndMisses, trie);
+			System.out.print("LLHash: ");
 			timeLookup(hitsAndMisses, hm100k);
+			System.out.print("BloomFilter: ");
 			timeLookup(hitsAndMisses, bloom);
 		}
 		
+		System.out.println("");
 		System.out.println("Bloom filter assistance, mixed data set checking: ");
 		for (int i=0; i<10; i++) {
 			// --- Create a dataset of mixed hits and misses with p=i/10.0
@@ -249,15 +265,23 @@ public class CheckSpelling {
 		}
 		
 		// See how long it takes the data structures to find all the words in the book
+		System.out.println("");
 		System.out.println("Looking for words in a book: ");
 		List<String> book = loadBook();
+		System.out.print("TreeSet: ");
 		timeLookup(book, treeOfWords);
+		System.out.print("HashSet: ");
 		timeLookup(book, hashOfWords);
+		System.out.print("SortedStringListSet: ");
 		timeLookup(book, bsl);
+		System.out.print("CharTrie: ");
 		timeLookup(book, trie);
+		System.out.print("LLHash: ");
 		timeLookup(book, hm100k);
+		System.out.print("BloomFilter: ");
 		timeLookup(book, bloom);
 		
+		System.out.println("");
 		System.out.println("Bloom filter assistance, looking for words in a book: ");
 		timeLookupBloom(book, treeOfWords, bloom);
 		timeLookupBloom(book, hashOfWords, bloom);
