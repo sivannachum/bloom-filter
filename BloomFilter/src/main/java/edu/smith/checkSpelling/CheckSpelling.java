@@ -1,6 +1,6 @@
 package edu.smith.checkSpelling;
 
-import edu.smith.bloom.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -65,17 +65,9 @@ public class CheckSpelling {
 		
 		int found = 0;
 		for (String w : words) {
-			// The commented out code is how I figured out what kinds of words were considered "Mis-spelled."
-			// I left it in in case you wanted to see how I did it.
-			// Random generator = new Random();
 			if (dictionary.contains(w)) {
 				found++;
 			}
-			/*
-			else if (generator.nextInt(10000) == 1) {
-				System.out.print(w + " ");
-			}
-			*/
 		}
 		
 		long endLookup = System.nanoTime();
@@ -83,6 +75,34 @@ public class CheckSpelling {
 		double timeSpentPerItem = (endLookup - startLookup) / ((double) words.size());
 		int nsPerItem = (int) timeSpentPerItem;
 		System.out.println(dictionary.getClass().getSimpleName()+": Lookup of items found="+fractionFound+" time="+nsPerItem+" ns/item");
+	}
+	
+	/**
+	 * This method looks for all the words in a dictionary
+	 * by first seeing if a bloom filter contains it,
+	 * then if the bloom filter says yes, it makes sure
+	 * that it's actually in the dictionary.
+	 * @param words - the "queries"
+	 * @param dictionary - the data structure.
+	 * @param bloom - the assisting bloom filter.
+	 */
+	public static void timeLookupBloom(List<String> words, Collection<String> dictionary, BloomFilter bloom) {
+		long startLookup = System.nanoTime();
+		
+		int found = 0;
+		for (String w : words) {
+			if (bloom.contains(w)) {
+				if (dictionary.contains(w)) {
+					found++;
+				}
+			}
+		}
+		
+		long endLookup = System.nanoTime();
+		double fractionFound = found / (double) words.size();
+		double timeSpentPerItem = (endLookup - startLookup) / ((double) words.size());
+		int nsPerItem = (int) timeSpentPerItem;
+		System.out.println(dictionary.getClass().getSimpleName()+" with Bloom assistance: Lookup of items found="+fractionFound+" time="+nsPerItem+" ns/item");
 	}
 	
 	/**
@@ -145,35 +165,19 @@ public class CheckSpelling {
 		long end = System.nanoTime();
 		double time = (end - start) / 1e9;
 		System.out.println("Loaded TreeSet in " + time +" seconds.");
+		
 		start = System.nanoTime();
 		HashSet<String> hashOfWords = new HashSet<>(listOfWords);
 		end = System.nanoTime();
 		time = (end - start) / 1e9;
 		System.out.println("Loaded HashSet in " + time +" seconds.");
 		
-		// Load TreeSet and HashSet with a loop instead
-		start = System.nanoTime();
-		TreeSet<String> treeWords = new TreeSet<>();
-		for (String w : listOfWords) {
-			treeWords.add(w);
-		}
-		end = System.nanoTime();
-		time = (end - start) / 1e9;
-		System.out.println("Loaded TreeSet with for loop in " + time +" seconds.");
-		start = System.nanoTime();
-		HashSet<String> hashWords = new HashSet<>();
-		for (String w : listOfWords) {
-			hashWords.add(w);
-		}
-		end = System.nanoTime();
-		time = (end - start) / 1e9;
-		System.out.println("Loaded HashSet with for loop in " + time +" seconds.");
-		
 		start = System.nanoTime();
 		SortedStringListSet bsl = new SortedStringListSet(listOfWords);
 		end = System.nanoTime();
 		time = (end - start) / 1e9;
 		System.out.println("Loaded SortedStringListSet in " + time +" seconds.");
+		
 		start = System.nanoTime();
 		CharTrie trie = new CharTrie();
 		for (String w : listOfWords) {
@@ -182,6 +186,7 @@ public class CheckSpelling {
 		end = System.nanoTime();
 		time = (end - start) / 1e9;
 		System.out.println("Loaded CharTrie in " + time +" seconds.");
+		
 		start = System.nanoTime();
 		LLHash hm100k = new LLHash(100000);
 		for (String w : listOfWords) {
@@ -190,14 +195,33 @@ public class CheckSpelling {
 		end = System.nanoTime();
 		time = (end - start) / 1e9;
 		System.out.println("Loaded LLHash in " + time +" seconds.");
+		
+		start = System.nanoTime();
+		BloomFilter bloom = new BloomFilter(1751201, 5);
+		for (String w : listOfWords) {
+			bloom.insert(w);
+		}
+		end = System.nanoTime();
+		time = (end - start) / 1e9;
+		System.out.println("Loaded BloomFilter in " + time +" seconds.");
+		
+		System.out.println("Looking up all the words in the dictionary: ");
 		// --- Make sure that every word in the dictionary is in the dictionary:
 		timeLookup(listOfWords, treeOfWords);
 		timeLookup(listOfWords, hashOfWords);
 		timeLookup(listOfWords, bsl);
 		timeLookup(listOfWords, trie);
 		timeLookup(listOfWords, hm100k);
+		timeLookup(listOfWords, bloom);
 		
+		System.out.println("Bloom filter assistance, looking up all the words in the dictionary: ");
+		timeLookupBloom(listOfWords, treeOfWords, bloom);
+		timeLookupBloom(listOfWords, hashOfWords, bloom);
+		timeLookupBloom(listOfWords, bsl, bloom);
+		timeLookupBloom(listOfWords, trie, bloom);
+		timeLookupBloom(listOfWords, hm100k, bloom);
 		
+		System.out.println("Mixed data set checking: ");
 		for (int i=0; i<10; i++) {
 			// --- Create a dataset of mixed hits and misses with p=i/10.0
 			List<String> hitsAndMisses = createMixedDataset(listOfWords, 10_000, i/10.0);
@@ -208,37 +232,38 @@ public class CheckSpelling {
 			timeLookup(hitsAndMisses, bsl);
 			timeLookup(hitsAndMisses, trie);
 			timeLookup(hitsAndMisses, hm100k);
+			timeLookup(hitsAndMisses, bloom);
+		}
+		
+		System.out.println("Bloom filter assistance, mixed data set checking: ");
+		for (int i=0; i<10; i++) {
+			// --- Create a dataset of mixed hits and misses with p=i/10.0
+			List<String> hitsAndMisses = createMixedDataset(listOfWords, 10_000, i/10.0);
+			
+			// --- Time the data structures.
+			timeLookupBloom(hitsAndMisses, treeOfWords, bloom);
+			timeLookupBloom(hitsAndMisses, hashOfWords, bloom);
+			timeLookupBloom(hitsAndMisses, bsl, bloom);
+			timeLookupBloom(hitsAndMisses, trie, bloom);
+			timeLookupBloom(hitsAndMisses, hm100k, bloom);
 		}
 		
 		// See how long it takes the data structures to find all the words in the book
+		System.out.println("Looking for words in a book: ");
 		List<String> book = loadBook();
 		timeLookup(book, treeOfWords);
 		timeLookup(book, hashOfWords);
 		timeLookup(book, bsl);
 		timeLookup(book, trie);
 		timeLookup(book, hm100k);
-
+		timeLookup(book, bloom);
 		
-		// --- linear list timing:
-		// Looking up in a list is so slow, we need to sample:
-		System.out.println("Start of list: ");
-		timeLookup(listOfWords.subList(0, 1000), listOfWords);
-		System.out.println("End of list: ");
-		timeLookup(listOfWords.subList(listOfWords.size()-100, listOfWords.size()), listOfWords);
-		
-	
-		// --- print statistics about the data structures:
-		System.out.println("Count-Nodes: "+trie.countNodes());
-		System.out.println("Count-Items: "+hm100k.size());
-
-		System.out.println("Count-Collisions[100k]: "+hm100k.countCollisions());
-		System.out.println("Count-Used-Buckets[100k]: "+hm100k.countUsedBuckets());
-		System.out.println("Load-Factor[100k]: "+hm100k.countUsedBuckets() / 100000.0);
-
-		
-		System.out.println("log_2 of listOfWords.size(): "+listOfWords.size());
-		
-		System.out.println("Done!");
+		System.out.println("Bloom filter assistance, looking for words in a book: ");
+		timeLookupBloom(book, treeOfWords, bloom);
+		timeLookupBloom(book, hashOfWords, bloom);
+		timeLookupBloom(book, bsl, bloom);
+		timeLookupBloom(book, trie, bloom);
+		timeLookupBloom(book, hm100k, bloom);
 	}
 }
 
