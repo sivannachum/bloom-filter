@@ -32,7 +32,7 @@ public class CheckSpelling {
 	}
 	
 	/**
-	 * Return all lists from some Project Gutenberg book.
+	 * Return all lines from some Project Gutenberg book.
 	 * @return a list of all the words in the book!
 	 */
 	public static List<String> loadBook() {
@@ -109,7 +109,7 @@ public class CheckSpelling {
 	 * Creates a data set with some real and some not real words
 	 * @param yesWords Words that are in the dictionary
 	 * @param numSamples the number of words you want in the dataset
-	 * @param fractionYes the number of real words you want in the data set
+	 * @param fractionYes the fraction of real words you want in the data set
 	 * @return a dataset with some real and some not real words
 	 */
 	public static List<String> createMixedDataset(List<String> yesWords, int numSamples, double fractionYes) {
@@ -221,6 +221,7 @@ public class CheckSpelling {
 		System.out.print("BloomFilter: ");
 		timeLookup(listOfWords, bloom);
 		
+		// Test that every word in the dictionary is in the dictionary with the Bloom Filter.
 		System.out.println("");
 		System.out.println("Bloom filter assistance, looking up all the words in the dictionary: ");
 		timeLookupBloom(listOfWords, treeOfWords, bloom);
@@ -256,7 +257,7 @@ public class CheckSpelling {
 			// --- Create a dataset of mixed hits and misses with p=i/10.0
 			List<String> hitsAndMisses = createMixedDataset(listOfWords, 10_000, i/10.0);
 			
-			// --- Time the data structures.
+			// --- Time the data structures with assistance from the Bloom Filter
 			timeLookupBloom(hitsAndMisses, treeOfWords, bloom);
 			timeLookupBloom(hitsAndMisses, hashOfWords, bloom);
 			timeLookupBloom(hitsAndMisses, bsl, bloom);
@@ -281,6 +282,7 @@ public class CheckSpelling {
 		System.out.print("BloomFilter: ");
 		timeLookup(book, bloom);
 		
+		// See how long it takes the data structures to find all the words in the book with assistance from the Bloom Filter
 		System.out.println("");
 		System.out.println("Bloom filter assistance, looking for words in a book: ");
 		timeLookupBloom(book, treeOfWords, bloom);
