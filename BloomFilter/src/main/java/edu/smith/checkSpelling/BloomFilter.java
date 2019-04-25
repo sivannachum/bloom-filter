@@ -11,7 +11,7 @@ import edu.smith.listADT.ListADT;
 /**
  * A Bloom Filter is a probabilistic data structure.
  * It supports the methods insert and contains, however its contains method can return false positives.
- * This data structure is more space efficient that a HashSet because it does not retain the actual values it store.
+ * This data structure is more space efficient than a HashSet because it does not retain the actual values it stores.
  * This version extends AbstractSet<String> so we can call the timeLookup method in the CheckSpelling class.
  * @author sivan
  */

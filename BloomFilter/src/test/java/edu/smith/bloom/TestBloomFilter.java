@@ -39,7 +39,7 @@ public class TestBloomFilter {
 		int n = 0;
 		int realWordsSize = realWords.size();
 		Random generator = new Random();
-		// Add words from the dictionary to the output list randomly, without repeats
+		// Add fake words to the output list
 		while (n < numSamples) {
 			int r = generator.nextInt(realWordsSize);
 			String word = realWords.get(r);
